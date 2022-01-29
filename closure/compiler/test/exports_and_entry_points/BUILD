@@ -17,8 +17,7 @@ package(default_testonly = True)
 licenses(["notice"])  # Apache 2.0
 
 load("//closure/private:file_test.bzl", "file_test")
-load("//closure:defs.bzl", "closure_js_binary")
-load("//closure:defs.bzl", "closure_js_library")
+load("//closure:defs.bzl", "closure_js_binary", "closure_js_library")
 
 ################################################################################
 # Assume we want to write a JavaScript program (not a library) that we compile
@@ -84,6 +83,7 @@ file_test(
 closure_js_library(
     name = "library_goog_lib",
     srcs = ["library_goog.js"],
+    suppress = ["useOfGoogProvide"],
 )
 
 closure_js_binary(
@@ -105,7 +105,7 @@ file_test(
 
 closure_js_binary(
     name = "program_strict_bin",
-    dependency_mode = "STRICT",
+    dependency_mode = "PRUNE",
     entry_points = ["closure/compiler/test/empty"],
     deps = [
         ":program_lib",
@@ -121,7 +121,7 @@ file_test(
 
 closure_js_binary(
     name = "program_strict_bin2",
-    dependency_mode = "STRICT",
+    dependency_mode = "PRUNE",
     entry_points = ["closure/compiler/test/exports_and_entry_points/program"],
     deps = [
         ":program_lib",

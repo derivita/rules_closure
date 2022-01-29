@@ -38,7 +38,7 @@ def closure_js_proto_library(
         protocbin = Label("@com_google_protobuf//:protoc"),
         **kwargs):
     cmd = ["$(location %s)" % protocbin]
-    js_out_options = ["library=%s,error_on_name_conflict" % name]
+    js_out_options = ["library=%s" % name]
     if add_require_for_enums:
         js_out_options += ["add_require_for_enums"]
     if testonly:
@@ -69,7 +69,7 @@ def closure_js_proto_library(
         srcs = [name + ".js"],
         testonly = testonly,
         deps = [
-            str(Label("//closure/library/array")),
+            str(Label("@com_google_javascript_closure_library//closure/goog/array")),
             str(Label("//closure/protobuf:jspb")),
         ],
         internal_descriptors = [name + ".descriptor"],

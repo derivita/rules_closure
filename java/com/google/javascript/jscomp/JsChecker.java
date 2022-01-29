@@ -171,7 +171,7 @@ public final class JsChecker {
     // configure compiler
     Compiler compiler = new Compiler();
     CompilerOptions options = new CompilerOptions();
-    options.setLanguage(LanguageMode.ECMASCRIPT_2017);
+    options.setLanguage(LanguageMode.STABLE);
     options.setStrictModeInput(true);
     options.setIncrementalChecks(IncrementalCheckMode.GENERATE_IJS);
     options.setCodingConvention(convention.convention);
@@ -242,7 +242,7 @@ public final class JsChecker {
             }
             // Ignore linter warnings on generated sources.
             if (groupNames.contains("lintChecks")
-                && JsCheckerHelper.isGeneratedPath(error.sourceName)) {
+                && JsCheckerHelper.isGeneratedPath(error.getSourceName())) {
               return CheckLevel.OFF;
             }
             return null;
@@ -334,7 +334,7 @@ public final class JsChecker {
     public Integer apply(Iterable<String> args) {
       JsChecker checker = new JsChecker();
       CmdLineParser parser = new CmdLineParser(checker);
-      parser.setUsageWidth(80);
+      parser.getProperties().withAtSyntax(false).withUsageWidth(80);
       try {
         parser.parseArgument(ImmutableList.copyOf(args));
       } catch (CmdLineException e) {

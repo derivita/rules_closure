@@ -17,8 +17,7 @@ package(default_testonly = True)
 licenses(["notice"])  # Apache 2.0
 
 load("//closure/private:file_test.bzl", "file_test")
-load("//closure:defs.bzl", "closure_js_binary")
-load("//closure:defs.bzl", "closure_js_library")
+load("//closure:defs.bzl", "closure_js_binary", "closure_js_library")
 
 ################################################################################
 # Assume we're using traditional Google namespaces.
@@ -26,17 +25,20 @@ load("//closure:defs.bzl", "closure_js_library")
 closure_js_library(
     name = "a",
     srcs = ["a.js"],
+    suppress = ["useOfGoogProvide"],
 )
 
 closure_js_library(
     name = "b",
     srcs = ["b.js"],
+    suppress = ["useOfGoogProvide"],
     deps = [":a"],
 )
 
 closure_js_library(
     name = "c",
     srcs = ["c.js"],
+    suppress = ["useOfGoogProvide"],
     deps = [
         ":a",
         ":b",
@@ -47,6 +49,7 @@ closure_js_library(
     name = "t",
     testonly = True,
     srcs = ["t.js"],
+    suppress = ["useOfGoogProvide"],
 )
 
 file_test(
@@ -96,6 +99,7 @@ file_test(
 closure_js_library(
     name = "b2",
     srcs = ["b.js"],
+    suppress = ["useOfGoogProvide"],
     exports = [":a"],
     deps = [":a"],
 )
@@ -103,6 +107,7 @@ closure_js_library(
 closure_js_library(
     name = "exportMadeTransitiveDepDirect",
     srcs = ["c.js"],
+    suppress = ["useOfGoogProvide"],
     deps = [":b2"],  # but if :b exports :a, then we're ok
 )
 
@@ -212,6 +217,7 @@ closure_js_library(
         "a.js",
         "es6_a.js",
     ],
+    suppress = ["useOfGoogProvide"],
 )
 
 file_test(
@@ -243,6 +249,31 @@ genrule(
     name = "es6_g2_generate",
     outs = ["es6_g2.js"],
     cmd = "echo 'import { g } from \"/closure/compiler/test/strict_dependency_checking/es6_g.js\"; g();' >$@",
+)
+
+genrule(
+    name = "es6_g3_generate",
+    outs = ["es6_g3.js"],
+    cmd = "echo 'import { g } from \"./es6_g.js\"; g();' >$@",
+)
+
+closure_js_library(
+    name = "es6_g3_gen_lib",
+    srcs = [":es6_g_generate", ":es6_g3_generate"],
+)
+
+closure_js_binary(
+    name = "es6_relative_imports_gen_srcs_bin",
+    entry_points = [
+        "closure/compiler/test/strict_dependency_checking/es6_g3.js",
+    ],
+    deps = [":es6_g3_gen_lib"],
+)
+
+file_test(
+    name = "es6ModulesWithRelativeImports_compileCorrectlyWhenSourcesAreGenerated",
+    content = "console.log(\"hi\");\n",
+    file = "es6_relative_imports_gen_srcs_bin.js",
 )
 
 closure_js_library(

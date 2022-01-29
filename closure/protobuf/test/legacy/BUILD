@@ -28,9 +28,9 @@ closure_js_proto_library(
 closure_js_library(
     name = "example_lib",
     srcs = ["example.js"],
+    suppress = ["useOfGoogProvide"],
     deps = [
         ":example_proto",
-        "//closure/library",
     ],
 )
 
@@ -40,6 +40,7 @@ closure_js_test(
     srcs = ["example_test.js"],
     deps = [
         ":example_lib",
-        "//closure/library:testing",
+        "@com_google_javascript_closure_library//closure/goog/testing:asserts",
+        "@com_google_javascript_closure_library//closure/goog/testing:jsunit",
     ],
 )

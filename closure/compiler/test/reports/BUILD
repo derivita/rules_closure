@@ -17,8 +17,7 @@ package(default_testonly = True)
 licenses(["notice"])  # Apache 2.0
 
 load("//closure/private:file_test.bzl", "file_test")
-load("//closure:defs.bzl", "closure_js_binary")
-load("//closure:defs.bzl", "closure_js_library")
+load("//closure:defs.bzl", "closure_js_binary", "closure_js_library")
 
 # Property renaming reports are rarely used. But they can be used to minify
 # JSON messages. However it's recommended that you use protobuf instead.
@@ -36,12 +35,12 @@ closure_js_binary(
 
 file_test(
     name = "propertyWithoutQuotes_getsRenamed",
-    content = "console.log({a:\"world\"});\n",
+    regexp = r'console.log({\w:"world"});',
     file = "property_bin.js",
 )
 
 file_test(
     name = "propertyRenamingReportDef_createsAdditionalOutputFile",
-    content = "hello:a\n",
+    regexp = "hello:\\w",
     file = "property_bin_renaming_report.txt",
 )
