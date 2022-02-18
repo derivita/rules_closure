@@ -16,6 +16,7 @@ package(default_testonly = True)
 
 licenses(["notice"])  # Apache 2.0
 
+load("@rules_proto//proto:defs.bzl", "proto_library")
 load("//closure/compiler:closure_js_library.bzl", "closure_js_library")
 load("//closure/protobuf:closure_proto_library.bzl", "closure_proto_library")
 load("//closure/testing:closure_js_test.bzl", "closure_js_test")
@@ -51,7 +52,7 @@ closure_js_test(
     ],
     deps = [
         ":foo",
-        "//closure/library:testing",
+        "@com_google_javascript_closure_library//closure/goog/testing:testsuite",
     ],
 )
 
@@ -94,6 +95,42 @@ closure_js_test(
     deps = [
         ":baz",
         ":foo",
-        "//closure/library:testing",
+        "@com_google_javascript_closure_library//closure/goog/testing:testsuite",
+    ],
+)
+
+proto_library(
+    name = "bat_proto",
+    srcs = ["bat.proto"],
+    deps = ["@com_google_protobuf//:any_proto"],
+)
+
+closure_proto_library(
+    name = "bat_closure_proto",
+    deps = [":bat_proto"],
+)
+
+closure_js_library(
+    name = "bat",
+    srcs = [
+        "bat.js",
+    ],
+    deps = [
+        ":bat_closure_proto",
+    ],
+)
+
+closure_js_test(
+    name = "bat_test",
+    timeout = "short",
+    srcs = [
+        "bat_test.js",
+    ],
+    entry_points = [
+        "goog:io.bazel.rules.closure.protobuf.BatTest",
+    ],
+    deps = [
+        ":bat",
+        "@com_google_javascript_closure_library//closure/goog/testing:testsuite",
     ],
 )

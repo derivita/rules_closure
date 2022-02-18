@@ -41,6 +41,39 @@ default_ts_suppress = [
     "underscore",
 ]
 
+_dependency_mode_warning = '\n'.join([
+  "{target}: dependency_mode={old_mode} is deprecated and will be " +
+      "removed soon; prefer to use its equivalent {new_mode}.",
+  "",
+  "  ** You can use the following buildozer command:",
+  "buildozer 'set dependency_mode \"{new_mode}\"' {target}",
+])
+
+def _get_dependency_mode_flag(target, attr):
+    if attr == "LOOSE":
+        print(_dependency_mode_warning.format(
+            target = str(target),
+            old_mode = "LOOSE",
+            new_mode = "PRUNE_LEGACY",
+        ))
+        return "PRUNE_LEGACY"
+    if attr == "STRICT":
+        print(_dependency_mode_warning.format(
+            target = str(target),
+            old_mode = "STRICT",
+            new_mode = "PRUNE",
+        ))
+        return "PRUNE"
+    return attr
+
+def _get_src_path(f):
+    path = get_jsfile_path(f)
+    if path != None:
+        if f.extension == "zip":
+            return ["--jszip", path]
+        return path
+    return None
+
 def _impl(ctx):
     if not ctx.attr.deps:
         fail("closure_js_binary rules can not have an empty 'deps' list")
@@ -54,7 +87,7 @@ def _impl(ctx):
         ))
 
     deps = unfurl(ctx.attr.deps, provider = "closure_js_library")
-    js = collect_js(deps, ctx.files._closure_library_base, css = ctx.attr.css)
+    js = collect_js(deps, ctx.attr._closure_library_base, css = ctx.attr.css)
     if not js.srcs:
         fail("There are no JS source files in the transitive closure")
 
@@ -89,7 +122,7 @@ def _impl(ctx):
         "--compilation_level",
         ctx.attr.compilation_level,
         "--dependency_mode",
-        ctx.attr.dependency_mode,
+        _get_dependency_mode_flag(ctx.label, ctx.attr.dependency_mode),
         "--warning_level",
         ctx.attr.warning_level,
         "--generate_exports",
@@ -131,9 +164,13 @@ def _impl(ctx):
         args.append("--use_types_for_optimization")
 
     if ctx.attr.output_wrapper:
-        args.append("--output_wrapper=" + ctx.attr.output_wrapper)
+        output_wrapper_file = ctx.actions.declare_file(ctx.attr.name + "_output_wrapper_file")
+        ctx.actions.write(output = output_wrapper_file, content = ctx.attr.output_wrapper)
+        inputs.append(output_wrapper_file)
+        args.append("--output_wrapper_file=" + output_wrapper_file.path)
         if ctx.attr.output_wrapper == "(function(){%output%}).call(this);":
             args.append("--assume_function_wrapper")
+
     if ctx.outputs.property_renaming_report:
         report = ctx.outputs.property_renaming_report
         files.append(report)
@@ -165,15 +202,12 @@ def _impl(ctx):
     all_args.add_all(args)
 
     # We shall now pass all transitive sources, including externs files.
-    for src in js.srcs.to_list():
-        inputs.append(src)
-        if src.path.endswith(".zip"):
-            all_args.add("--jszip")
-        all_args.add_all(
-            [src],
-            map_each = get_jsfile_path,
-            expand_directories = True,
-        )
+    all_args.add_all(
+        js.srcs,
+        map_each = _get_src_path,
+        expand_directories = True,
+    )
+    inputs.extend(js.srcs.to_list())
 
     # As a matter of policy, we don't add attributes to this rule just because we
     # can. We only add attributes when the Skylark code adds value beyond merely
@@ -240,7 +274,18 @@ closure_js_binary = rule(
         "css": attr.label(providers = ["closure_css_binary"]),
         "debug": attr.bool(default = False),
         "defs": attr.string_list(),
-        "dependency_mode": attr.string(default = "LOOSE"),
+        # TODO(tjgq): Remove the deprecated STRICT/LOOSE in favor of PRUNE/PRUNE_LEGACY.
+        "dependency_mode": attr.string(
+            default = "PRUNE_LEGACY",
+            values = [
+                "NONE",
+                "SORT_ONLY",
+                "LOOSE",
+                "STRICT",
+                "PRUNE",
+                "PRUNE_LEGACY",
+            ],
+        ),
         "deps": attr.label_list(
             providers = ["closure_js_library"],
         ),

@@ -1,24 +1,17 @@
 workspace(name = "io_bazel_rules_closure")
 
+load("@bazel_tools//tools/build_defs/repo:java.bzl", "java_import_external")
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
-load("//closure/private:java_import_external.bzl", "java_import_external")
-load("//closure:repositories.bzl", "closure_repositories")
 
-closure_repositories()
-
-http_archive(
-    name = "zlib",
-    build_file = "//:third_party/zlib.BUILD",
-    sha256 = "c3e5e9fdd5004dcb542feda5ee4f0ff0744628baf8ed2dd5d66f8ca1197cb1a1",
-    strip_prefix = "zlib-1.2.11",
-    urls = ["https://zlib.net/zlib-1.2.11.tar.gz"],
-)
+load("@io_bazel_rules_closure//closure:repositories.bzl", "rules_closure_dependencies", "rules_closure_toolchains")
+rules_closure_dependencies()
+rules_closure_toolchains()
 
 http_archive(
     name = "bazel_skylib",
-    sha256 = "bbccf674aa441c266df9894182d80de104cabd19be98be002f6d478aaa31574d",
-    strip_prefix = "bazel-skylib-2169ae1c374aab4a09aa90e65efe1a3aad4e279b",
-    urls = ["https://github.com/bazelbuild/bazel-skylib/archive/2169ae1c374aab4a09aa90e65efe1a3aad4e279b.tar.gz"],
+    sha256 = "7ac0fa88c0c4ad6f5b9ffb5e09ef81e235492c873659e6bb99efb89d11246bcb",
+    strip_prefix = "bazel-skylib-1.0.3",
+    urls = ["https://github.com/bazelbuild/bazel-skylib/archive/1.0.3.tar.gz"],
 )
 
 java_import_external(

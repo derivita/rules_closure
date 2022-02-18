@@ -57,11 +57,9 @@ final class Diagnostics {
           "nonStandardJsDocs",
           "setTestOnly",
           "strictDependencies",
-          "strictMissingRequire",
           "strictModuleChecks",
           "superfluousSuppress",
-          "underscore",
-          "useOfGoogBase");
+          "underscore");
 
   /** Diagnostic groups both {@link JsChecker} and {@link JsCompiler} will check. */
   static final ImmutableSet<String> JSCHECKER_EXTRA_ERRORS =
@@ -75,8 +73,8 @@ final class Diagnostics {
   private static final ImmutableSet<String> LEGAL_JSDOC_SUPPRESSIONS =
       ImmutableSet.of(
           "accessControls",
-          "ambiguousFunctionDecl",
           "checkDebuggerStatement",
+          "checkPrototypalTypes",
           "checkRegExp",
           "checkTypes",
           "checkVars",
@@ -87,12 +85,13 @@ final class Diagnostics {
           "duplicate",
           "es5Strict",
           "externsValidation",
+          "extraProvide",
           "extraRequire",
-          "fileoverviewTags",
           "globalThis",
           "invalidCasts",
           "lateProvide",
           "legacyGoogScopeRequire",
+          "lintChecks",
           "messageConventions",
           "misplacedTypeAnnotation",
           "missingOverride",
@@ -101,20 +100,26 @@ final class Diagnostics {
           "missingProvide",
           "missingRequire",
           "missingReturn",
-          "newCheckTypes",
-          "newCheckTypesAllChecks",
+          "missingSourcesWarnings",
+          "moduleLoad",
           "nonStandardJsDocs",
+          "partialAlias",
+          "polymer",
           "reportUnknownTypes",
+          "strictCheckTypes",
+          "strictMissingProperties",
           "strictModuleDepCheck",
+          "strictPrimitiveOperators",
           "suspiciousCode",
           "transitionalSuspiciousCodeWarnings",
           "undefinedNames",
           "undefinedVars",
           "underscore",
           "unknownDefines",
-          "unnecessaryCasts",
+          "untranspilableFeatures",
           "unusedLocalVariables",
           "unusedPrivateMembers",
+          "useOfGoogProvide",
           "uselessCode",
           "visibility",
           "with");
@@ -132,11 +137,6 @@ final class Diagnostics {
   static final ImmutableSet<DiagnosticType> CLOSURE_LINTER_CHECKS =
       new ImmutableSet.Builder<DiagnosticType>()
           .addAll(GOOGLE_LINTER_CHECKS)
-          .add(CheckJSDocStyle.MUST_BE_PRIVATE)
-          .add(CheckJSDocStyle.MUST_HAVE_TRAILING_UNDERSCORE)
-          .add(CheckMissingAndExtraRequires.MISSING_REQUIRE_FOR_GOOG_SCOPE)
-          .add(CheckMissingAndExtraRequires.MISSING_REQUIRE_STRICT_WARNING)
-          .add(CheckMissingAndExtraRequires.MISSING_REQUIRE_WARNING)
           .add(ClosureCheckModule.LET_GOOG_REQUIRE)
           .add(ClosureRewriteModule.USELESS_USE_STRICT_DIRECTIVE)
           .add(ImplicitNullabilityCheck.IMPLICITLY_NULLABLE_JSDOC)

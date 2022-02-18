@@ -20,6 +20,7 @@ import static com.google.javascript.jscomp.JsCheckerHelper.convertPathToModuleNa
 import static com.google.javascript.jscomp.JsCheckerHelper.isInSyntheticCode;
 
 import com.google.common.collect.Multimap;
+import com.google.javascript.jscomp.base.Tri;
 import java.util.List;
 import java.util.Set;
 
@@ -49,16 +50,12 @@ final class JsCompilerWarnings extends WarningsGuard {
   }
 
   @Override
-  protected boolean enables(DiagnosticGroup group) {
-    // Oh yes, we want all the wonderful checks the Closure Compiler performs. That is with the
-    // exception of the things JsChecker alone is responsible for checking.
-    return !Diagnostics.JSCHECKER_ONLY_GROUPS.contains(group);
+  public Tri mustRunChecks(DiagnosticGroup group) {
+    return Diagnostics.JSCHECKER_ONLY_GROUPS.contains(group) ? Tri.UNKNOWN : Tri.TRUE;
   }
 
   @Override
   public CheckLevel level(JSError error) {
-    CheckLevel level = CheckLevel.ERROR;
-
     // Closure Rules will always ignore these checks no matter what.
     if (Diagnostics.IGNORE_ALWAYS.contains(error.getType())) {
       return CheckLevel.OFF;
@@ -82,18 +79,24 @@ final class JsCompilerWarnings extends WarningsGuard {
     }
 
     // Some errors are independent of code, e.g. flag misuse.
-    if (error.sourceName == null) {
+    if (error.getSourceName() == null) {
       return CheckLevel.ERROR;
     }
+    
+    // We provide an escape hatch for situations in which it's not possible (or too burdensome) to
+    // add a suppress code to the closure_js_library() rule responsible for the error.
+    if (globalSuppressions.contains(error.getType())) {
+      return CheckLevel.OFF;
+    }
 
-    for (String module : convertPathToModuleName(error.sourceName, roots).asSet()) {
+    for (String module : convertPathToModuleName(error.getSourceName(), roots).asSet()) {
       if (legacyModules.contains(module)) {
         // Ignore it entirely if it's very noisy.
         if (Diagnostics.IGNORE_FOR_LEGACY.contains(error.getType())) {
           return CheckLevel.OFF;
         }
         // Otherwise downgrade to a warning, since it's not easily actionable.
-        level = CheckLevel.WARNING;
+        return CheckLevel.WARNING;
       } else if (suppressions.containsEntry(module, error.getType())) {
         // If a closure_js_library() defined this source file, then check if that library rule
         // defined a suppress code to make this error go away.
@@ -101,13 +104,19 @@ final class JsCompilerWarnings extends WarningsGuard {
       }
     }
 
-    // We provide an escape hatch for situations in which it's not possible (or too burdensome) to
-    // add a suppress code to the closure_js_library() rule responsible for the error.
-    if (globalSuppressions.contains(error.getType())) {
-      return CheckLevel.OFF;
-    }
+    switch (error.getDefaultLevel()) {
+      case OFF:
+        /**
+         * Treat any user invisible diagnostics as safe by default.
+         *
+         * <p>This lets new diagnostics be added to JSCompiler without immediately being errors,
+         * whcih is useful for staged rollouts.
+         */
+        return CheckLevel.OFF;
 
-    // Otherwise we'll be cautious and just assume it's bad.
-    return level;
+      default:
+        // Treat any user visible diagnostic as an error by default.
+        return CheckLevel.ERROR;
+    }
   }
 }

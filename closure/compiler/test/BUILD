@@ -17,13 +17,12 @@ package(default_testonly = True)
 licenses(["notice"])  # Apache 2.0
 
 load("//closure/private:file_test.bzl", "file_test")
-load("//closure/private:rule_test.bzl", "rule_test")
-load("//closure:defs.bzl", "closure_js_binary")
-load("//closure:defs.bzl", "closure_js_library")
+load("//closure:defs.bzl", "closure_js_binary", "closure_js_library")
 
 closure_js_library(
     name = "hello_lib",
     srcs = ["hello.js"],
+    no_closure_library = True,
 )
 
 closure_js_binary(
@@ -39,15 +38,7 @@ file_test(
 
 file_test(
     name = "sourcemap_doesntContainWeirdBazelDirectories",
-    content = ("{\n" +
-               "\"version\":3,\n" +
-               "\"file\":\"hello_bin.js\",\n" +
-               "\"lineCount\":1,\n" +
-               "\"mappings\":\"AAgBAA,OAAAC,IAAA,CAAgB,aAAhB;\",\n" +
-               "\"sources\":[\"/closure/compiler/test/hello.js\"],\n" +
-               "\"sourcesContent\":[\"// Copyright 2016 The Closure Rules Authors. All rights reserved.\\n//\\n// Licensed under the Apache License, Version 2.0 (the \\\"License\\\");\\n// you may not use this file except in compliance with the License.\\n// You may obtain a copy of the License at\\n//\\n//    http://www.apache.org/licenses/LICENSE-2.0\\n//\\n// Unless required by applicable law or agreed to in writing, software\\n// distributed under the License is distributed on an \\\"AS IS\\\" BASIS,\\n// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\\n// See the License for the specific language governing permissions and\\n// limitations under the License.\\n\\n// hello world\\n\\nconsole . log ( 'hello world' ) ;\\n\"],\n" +
-               "\"names\":[\"console\",\"log\"]\n" +
-               "}\n"),
+    regexp = r'"sources":\["/closure/compiler/test/hello.js"\]',
     file = "hello_bin.js.map",
 )
 
@@ -73,28 +64,20 @@ file_test(
 
 file_test(
     name = "sourcemapWithWrapper_hasDifferentMappingCodes",
-    content = "{\n" +
-              "\"version\":3,\n" +
-              "\"file\":\"hello_wrap_bin.js\",\n" +
-              "\"lineCount\":1,\n" +
-              "\"mappings\":\"A,YAgBAA,OAAAC,IAAA,CAAgB,aAAhB;\",\n" +
-              "\"sources\":[\"/closure/compiler/test/hello.js\"],\n" +
-              "\"sourcesContent\":[\"// Copyright 2016 The Closure Rules Authors. All rights reserved.\\n//\\n// Licensed under the Apache License, Version 2.0 (the \\\"License\\\");\\n// you may not use this file except in compliance with the License.\\n// You may obtain a copy of the License at\\n//\\n//    http://www.apache.org/licenses/LICENSE-2.0\\n//\\n// Unless required by applicable law or agreed to in writing, software\\n// distributed under the License is distributed on an \\\"AS IS\\\" BASIS,\\n// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\\n// See the License for the specific language governing permissions and\\n// limitations under the License.\\n\\n// hello world\\n\\nconsole . log ( 'hello world' ) ;\\n\"],\n" +
-              "\"names\":[\"console\",\"log\"]\n" +
-              "}\n",
+    regexp = r'"mappings":"[A-Za-z,]\+;",',
     file = "hello_wrap_bin.js.map",
 )
 
 closure_js_binary(
-    name = "hello_es5strict_bin",
-    language = "ECMASCRIPT5_STRICT",
+    name = "hello_strict_bin",
+    defs = ["--emit_use_strict=True"],
     deps = [":hello_lib"],
 )
 
 file_test(
-    name = "strictOutputLanguage_addsUseStrict",
+    name = "emitUseString_addsUseStrict",
     content = "'use strict';console.log(\"hello world\");\n",
-    file = "hello_es5strict_bin.js",
+    file = "hello_strict_bin.js",
 )
 
 closure_js_library(
@@ -170,6 +153,18 @@ file_test(
     name = "output_wrapper_dash_dash_space",
     content = "-- console.log(\"hello world\");\n",
     file = "hello_output_wrapper_dash_dash_space_bin.js",
+)
+
+closure_js_binary(
+    name = "multiline_output_wrapper_bin",
+    output_wrapper = "%output%\n//# sourceMappingURL=/app.js.map",
+    deps = [":empty_lib"],
+)
+
+file_test(
+    name = "multiline_output_wrapper_test",
+    content = "\n//# sourceMappingURL=/app.js.map\n",
+    file = "multiline_output_wrapper_bin.js",
 )
 
 ################################################################################

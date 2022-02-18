@@ -4,8 +4,8 @@ JavaScript | Templating | Stylesheets | Miscellaneous
 --- | --- | --- | ---
 [closure_js_library] | [closure_js_template_library] | [closure_css_library] | [closure_js_proto_library]
 [closure_js_binary] | [closure_java_template_library] | [closure_css_binary] | [phantomjs_test]
-[closure_js_deps] | [closure_py_template_library] | | [closure_proto_library] \(Experimental\)
-[closure_js_test] | | | [closure_grpc_web_library] \(Experimental\)
+[closure_js_test] | [closure_py_template_library] | | [closure_proto_library] \(Experimental\)
+| | | | [closure_grpc_web_library] \(Experimental\)
 
 ## Overview
 
@@ -69,22 +69,22 @@ notes.
 First you must [install Bazel]. Then you add the following to your `WORKSPACE`
 file:
 
-```python
+```starlark
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
 http_archive(
     name = "io_bazel_rules_closure",
-    sha256 = "a80acb69c63d5f6437b099c111480a4493bad4592015af2127a2f49fb7512d8d",
-    strip_prefix = "rules_closure-0.7.0",
+    sha256 = "7d206c2383811f378a5ef03f4aacbcf5f47fd8650f6abbc3fa89f3a27dd8b176",
+    strip_prefix = "rules_closure-0.10.0",
     urls = [
-        "https://mirror.bazel.build/github.com/bazelbuild/rules_closure/archive/0.7.0.tar.gz",
-        "https://github.com/bazelbuild/rules_closure/archive/0.7.0.tar.gz",
+        "https://mirror.bazel.build/github.com/bazelbuild/rules_closure/archive/0.10.0.tar.gz",
+        "https://github.com/bazelbuild/rules_closure/archive/0.10.0.tar.gz",
     ],
 )
 
-load("@io_bazel_rules_closure//closure:defs.bzl", "closure_repositories")
-
-closure_repositories()
+load("@io_bazel_rules_closure//closure:repositories.bzl", "rules_closure_dependencies", "rules_closure_toolchains")
+rules_closure_dependencies()
+rules_closure_toolchains()
 ```
 
 You are not required to install the Closure Tools, PhantomJS, or anything else
@@ -92,26 +92,23 @@ for that matter; they will be fetched automatically by Bazel.
 
 ### Overriding Dependency Versions
 
-When you call `closure_repositories()` in your `WORKSPACE` file, it causes a
+When you call `rules_closure_dependencies()` in your `WORKSPACE` file, it causes a
 few dozen external dependencies to be added to your project, e.g. Guava, Guice,
 JSR305, etc. You might need to customize this behavior.
 
 To override the version of any dependency, modify your `WORKSPACE` file to pass
-`omit_<dependency_name>=True` to `closure_repositories()`. Next define your
+`omit_<dependency_name>=True` to `rules_closure_dependencies()`. Next define your
 custom dependency version. A full list of dependencies is available from
 [repositories.bzl]. For example, to override the version of Guava:
 
-```python
-load(
-    "@io_bazel_rules_closure//closure:defs.bzl",
-    "closure_repositories",
-    "java_import_external",
-)
-
-closure_repositories(
+```starlark
+load("@io_bazel_rules_closure//closure:repositories.bzl", "rules_closure_dependencies", "rules_closure_toolchains")
+rules_closure_dependencies(
     omit_com_google_guava=True,
 )
+rules_closure_toolchains()
 
+load("@bazel_tools//tools/build_defs/repo:java.bzl", "java_import_external")
 java_import_external(
     name = "com_google_guava",
     licenses = ["notice"],  # Apache 2.0
@@ -133,7 +130,6 @@ Please see the test directories within this project for concrete examples of usa
 
 - [//closure/testing/test](https://github.com/bazelbuild/rules_closure/tree/master/closure/testing/test)
 - [//closure/compiler/test](https://github.com/bazelbuild/rules_closure/tree/master/closure/compiler/test)
-- [//closure/library/test](https://github.com/bazelbuild/rules_closure/tree/master/closure/library/test)
 - [//closure/templates/test](https://github.com/bazelbuild/rules_closure/tree/master/closure/templates/test)
 - [//closure/stylesheets/test](https://github.com/bazelbuild/rules_closure/tree/master/closure/stylesheets/test)
 - [//closure/protobuf/test](https://github.com/bazelbuild/rules_closure/tree/master/closure/protobuf/test)
@@ -144,7 +140,7 @@ Please see the test directories within this project for concrete examples of usa
 
 ## closure\_js\_library
 
-```python
+```starlark
 load("@io_bazel_rules_closure//closure:defs.bzl", "closure_js_library")
 closure_js_library(name, srcs, data, deps, exports, suppress, convention,
                    no_closure_library)
@@ -245,7 +241,7 @@ This rule can be referenced as though it were the following:
 
 ## closure\_js\_binary
 
-```python
+```starlark
 load("@io_bazel_rules_closure//closure:defs.bzl", "closure_js_binary")
 closure_js_binary(name, deps, css, debug, language, entry_points,
                   dependency_mode, compilation_level, formatting,
@@ -332,7 +328,7 @@ This rule can be referenced as though it were the following:
 
   - `WHITESPACE_ONLY`: Tells the Closure Compiler to strip whitespace and
     comments. Transpilation between languages will still work. Type checking
-    becomes disabled. No symbols will not be renamed. Nothing will be inlined.
+    becomes disabled. No symbols will be renamed. Nothing will be inlined.
     Dependency statements will not be removed. **ProTip:** If you're using the
     Closure Library, you'll need to look into the `CLOSURE_NO_DEPS` and
     `goog.ENABLE_DEBUG_LOADER` options in order to execute the compiled output.)
@@ -367,7 +363,7 @@ When compiling AngularJS applications, you need to pass custom flags to the
 Closure Compiler. This can be accomplished by adding the following to your
 [closure_js_binary] rule:
 
-```python
+```starlark
 closure_js_binary(
     # ...
     defs = [
@@ -379,7 +375,7 @@ closure_js_binary(
 
 ## closure\_js\_test
 
-```python
+```starlark
 load("@io_bazel_rules_closure//closure:defs.bzl", "closure_js_test")
 closure_js_test(name, srcs, data, deps, css, html, language, suppress,
                 compilation_level, entry_points, defs)
@@ -428,8 +424,7 @@ This rule can be referenced as though it were the following:
   register test functions.
 
 - **deps:** (List of [labels]; optional) Direct dependency list passed along to
-  [closure_js_library]. This list will almost certainly need
-  `"@io_bazel_rules_closure//closure/library:testing"`.
+  [closure_js_library].
 
 - **data:** (List of [labels]; optional) Passed to [closure_js_library].
 
@@ -452,7 +447,7 @@ This rule can be referenced as though it were the following:
 
 ## phantomjs\_test
 
-```python
+```starlark
 load("@io_bazel_rules_closure//closure:defs.bzl", "phantomjs_test")
 phantomjs_test(name, data, deps, html, harness, runner)
 ```
@@ -498,56 +493,9 @@ This rule can be referenced as though it were the following:
   to report the result to the `harness`.
 
 
-## closure\_js\_deps
-
-```python
-load("@io_bazel_rules_closure//closure:defs.bzl", "closure_js_deps")
-closure_js_deps(name, deps)
-```
-
-Generates a dependency file, for an application using the Closure Library.
-
-Generating this file is necessary for running an application in raw sources
-mode, because it tells the Closure Library how to load namespaces from the web
-server that are requested by `goog.require()`.
-
-For example, if you've made your source runfiles available under a protected
-admin-only path named `/filez/`, then raw source mode could be used as follows:
-
-```html
-<script src="/filez/external/closure_library/closure/goog/base.js"></script>
-<script src="/filez/myapp/deps.js"></script>
-<script>goog.require('myapp.main');</script>
-<script>myapp.main();</script>
-```
-
-#### Implicit Output Targets
-
-- *name*.js: A JavaScript source file containing `goog.addDependency()`
-  statements which map Closure Library namespaces to JavaScript source paths.
-  Each path is expressed relative to the location of the Closure Library
-  [base.js] file.
-
-#### Rule Polymorphism
-
-This rule can be referenced as though it were the following:
-
-- [filegroup]: `srcs` will be the deps.js output files and `data` will contain
-  that file in addition to all transitive JS sources and data.
-
-### Arguments
-
-- **name:** ([Name]; required) A unique name for this rule. Convention states
-  that this be `"deps"`.
-
-- **deps:** (List of [labels]; required) List of [closure_js_library] and
-  [closure_js_template_library] targets which define all JavaScript sources in
-  your application.
-
-
 ## closure\_js\_template\_library
 
-```python
+```starlark
 load("@io_bazel_rules_closure//closure:defs.bzl", "closure_js_template_library")
 closure_js_template_library(name, srcs, data, deps, globals, plugin_modules,
                             should_generate_js_doc,
@@ -634,7 +582,7 @@ This rule can be referenced as though it were the following:
 
 ## closure\_java\_template\_library
 
-```python
+```starlark
 load("@io_bazel_rules_closure//closure:defs.bzl", "closure_java_template_library")
 closure_java_template_library(name, srcs, data, deps, java_package)
 ```
@@ -699,7 +647,7 @@ TODO
 
 ## closure\_css\_library
 
-```python
+```starlark
 load("@io_bazel_rules_closure//closure:defs.bzl", "closure_css_library")
 closure_css_library(name, srcs, data, deps)
 ```
@@ -763,7 +711,7 @@ This rule can be referenced as though it were the following:
 
 ## closure\_css\_binary
 
-```python
+```starlark
 load("@io_bazel_rules_closure//closure:defs.bzl", "closure_css_binary")
 closure_css_binary(name, deps, renaming, debug, defs)
 ```
@@ -872,7 +820,7 @@ This rule can be referenced as though it were the following:
 
 ## closure\_js\_proto\_library
 
-```python
+```starlark
 load("@io_bazel_rules_closure//closure:defs.bzl", "closure_js_proto_library")
 closure_js_proto_library(name, srcs, add_require_for_enums, binary,
                          import_style)
@@ -929,7 +877,7 @@ This rule can be referenced as though it were the following:
 
 ## closure\_proto\_library
 
-```python
+```starlark
 load("@io_bazel_rules_closure//closure:defs.bzl", "closure_proto_library")
 closure_proto_library(name, deps)
 ```
@@ -976,7 +924,6 @@ This rule can be referenced as though it were the following:
 [closure_grpc_web_library]: https://github.com/grpc/grpc-web/blob/9b7b2d5411c486aa646ba2491cfd894d5352775b/bazel/closure_grpc_web_library.bzl#L149
 [closure_java_template_library]: #closure_java_template_library
 [closure_js_binary]: #closure_js_binary
-[closure_js_deps]: #closure_js_deps
 [closure_js_library]: #closure_js_library
 [closure_js_proto_library]: #closure_js_proto_library
 [closure_js_template_library]: #closure_js_template_library

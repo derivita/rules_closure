@@ -18,32 +18,29 @@
 CSS_FILE_TYPE = [".css", ".gss"]
 HTML_FILE_TYPE = [".html"]
 JS_FILE_TYPE = [".js"]
-JS_LANGUAGE_DEFAULT = "ECMASCRIPT5_STRICT"
 JS_TEST_FILE_TYPE = ["_test.js"]
 SOY_FILE_TYPE = [".soy"]
 
-JS_LANGUAGE_IN = "ECMASCRIPT_2017"
+JS_LANGUAGE_IN = "STABLE"
 JS_LANGUAGE_OUT_DEFAULT = "ECMASCRIPT5"
 JS_LANGUAGES = depset([
     "ECMASCRIPT3",
     "ECMASCRIPT5",
-    "ECMASCRIPT5_STRICT",
     "ECMASCRIPT6",
-    "ECMASCRIPT6_STRICT",
-    "ECMASCRIPT6_TYPED",
     "ECMASCRIPT_2015",
     "ECMASCRIPT_2016",
     "ECMASCRIPT_2017",
     "ECMASCRIPT_2018",
     "ECMASCRIPT_2019",
+    "ECMASCRIPT_2020",
+    "ECMASCRIPT_2021",
     "ECMASCRIPT_NEXT",
     "STABLE",
     "NO_TRANSPILE",
 ])
 
-CLOSURE_LIBRARY_BASE_ATTR = attr.label(
-    default = Label("//closure/library:base"),
-    allow_files = True,
+CLOSURE_LIBRARY_BASE_ATTR = attr.label_list(
+    default = [Label("//closure/private:base_lib")],
 )
 
 CLOSURE_WORKER_ATTR = attr.label(
@@ -52,12 +49,25 @@ CLOSURE_WORKER_ATTR = attr.label(
     cfg = "host",
 )
 
+# Necessary for checking ijs files
+UNUSABLE_TYPE_DEFINITION = attr.label(
+    default = Label("//closure/private:unusable_type.js"),
+    allow_single_file = True,
+)
+
 CLOSURE_JS_TOOLCHAIN_ATTRS = {
     "_closure_library_base": CLOSURE_LIBRARY_BASE_ATTR,
+    "_unusable_type_definition": UNUSABLE_TYPE_DEFINITION,
 }
 
 def get_jsfile_path(f):
-    return f.path
+    """Returns the file path for a JavaScript file, otherwise None.
+
+       This may be used to exclude non-JavaScript files inside tree artifacts
+       expanded by Args#add_all.
+    """
+    # TODO(tjgq): Remove .zip once J2CL is switched to tree artifacts.
+    return f.path if f.extension in ["js", "zip","mjs","json"] else None
 
 def unfurl(deps, provider = ""):
     """Returns deps as well as deps exported by parent rules."""
@@ -73,7 +83,6 @@ def unfurl(deps, provider = ""):
 
 def collect_js(
         deps,
-        closure_library_base = None,
         has_direct_srcs = False,
         no_closure_library = False,
         css = None):
@@ -103,11 +112,11 @@ def collect_js(
         if has_closure_library:
             fail("no_closure_library can't be used when Closure Library is " +
                  "already part of the transitive closure")
-    elif has_direct_srcs and not has_closure_library:
-        direct_srcs += closure_library_base
+    elif has_direct_srcs:
         has_closure_library = True
+
     if css:
-        direct_srcs += closure_library_base + [css.closure_css_binary.renaming_map]
+        direct_srcs += [css.closure_css_binary.renaming_map]
 
     return struct(
         srcs = depset(direct_srcs, transitive = srcs),
@@ -253,6 +262,7 @@ def library_level_checks(
         srcs,
         executable,
         output,
+        unusable_type_definition,
         suppress = [],
         internal_expect_failure = False):
     args = [
@@ -263,14 +273,14 @@ def library_level_checks(
         "--jscomp_off",
         "reportUnknownTypes",
         "--language_in",
-        "ECMASCRIPT_2017",
+        "STABLE",
         "--language_out",
         "ECMASCRIPT5",
         "--js_output_file",
         output.path,
     ]
     inputs = []
-    for f in ijs_deps.to_list():
+    for f in ijs_deps.to_list() + unusable_type_definition:
         args.append("--externs=%s" % f.path)
         inputs.append(f)
 
