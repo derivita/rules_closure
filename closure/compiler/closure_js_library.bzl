@@ -72,7 +72,6 @@ def create_closure_js_library(
         lenient = lenient,
         convention = convention,
         testonly = testonly,
-        closure_library_base = ctx.files._closure_library_base,
     )
 
 def _closure_js_library_impl(
@@ -83,7 +82,6 @@ def _closure_js_library_impl(
         suppress,
         lenient,
         convention,
-        closure_library_base,
         closure_worker = None,
         includes = (),
         exports = depset(),
@@ -122,13 +120,13 @@ def _closure_js_library_impl(
     srcs_it = srcs
     if type(srcs) == "depset":
         srcs_it = srcs.to_list()
- 
+
     if type(internal_descriptors) == "list":
-        internal_descriptors = depset(internal_descriptors)
+        internal_descriptors = depset(internal_descriptors.to_list())
 
     # We now export providers to any parent Target. This is considered a public
-    # interface because other Skylark rules can be designed to do things with
-    # this data. Other Skylark rules can even export their own provider with the
+    # interface because other Starlark rules can be designed to do things with
+    # this data. Other Starlark rules can even export their own provider with the
     # same name to become polymorphically compatible with this one.
     return struct(
         # Iterable<Target> of deps that should only become deps in parent rules.
@@ -214,19 +212,18 @@ def _closure_js_library(ctx):
 
     library = _closure_js_library_impl(
         ctx,
-        srcs,
-        ctx.attr.deps,
-        ctx.attr.testonly,
-        ctx.attr.suppress,
-        ctx.attr.lenient,
-        ctx.attr.convention,
-        ctx.files._closure_library_base,
-        None,
-        getattr(ctx.attr, "includes", []),
-        ctx.attr.exports,
-        ctx.files.internal_descriptors,
-        ctx.attr.no_closure_library,
-        ctx.attr.internal_expect_failure,
+        srcs = srcs,
+        deps = ctx.attr.deps,
+        testonly = ctx.attr.testonly,
+        suppress = ctx.attr.suppress,
+        lenient = ctx.attr.lenient,
+        convention = ctx.attr.convention,
+        closure_worker = None,
+        includes = getattr(ctx.attr, "includes", []),
+        exports = ctx.attr.exports,
+        internal_descriptors = depset(ctx.files.internal_descriptors),
+        no_closure_library = ctx.attr.no_closure_library,
+        internal_expect_failure = ctx.attr.internal_expect_failure,
     )
 
     return struct(
