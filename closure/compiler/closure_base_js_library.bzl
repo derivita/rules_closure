@@ -27,7 +27,7 @@ def _closure_base_js_library(ctx):
 closure_base_js_library = rule(
     implementation = _closure_base_js_library,
     attrs = {
-        "srcs": attr.label_list(allow_files = JS_FILE_TYPE),
+        "srcs": attr.label_list(allow_files = JS_FILE_TYPE + [".d.ts"]),
         "_ClosureWorker": CLOSURE_WORKER_ATTR,
         # Leave empty to avoid circular dependencies
         "_closure_library_base": attr.label_list(default = []),

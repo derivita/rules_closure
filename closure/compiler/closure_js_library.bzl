@@ -23,6 +23,7 @@ load(
     "collect_runfiles",
     "unfurl",
 )
+load("@build_bazel_rules_nodejs//:providers.bzl", "DeclarationInfo", "declaration_info")
 
 def create_closure_js_library(
         ctx,
@@ -97,6 +98,16 @@ def _closure_js_library_impl(
     if not no_closure_library:
         deps = deps + ctx.attr._closure_library_base
 
+    srcs_it = srcs
+    if type(srcs) == "depset":
+        srcs_it = srcs.to_list()
+
+    dts_srcs = [f for f in srcs_it if f.path.endswith(".d.ts")]
+    srcs_it = [f for f in srcs_it if f.path.endswith(".js") or f.path.endswith(".mjs")]
+
+    # don't pass protofire deps to declaration_info
+    declarations = declaration_info(depset(dts_srcs), [d for d in deps if type(d) != "struct"])
+
     # Create a list of direct children of this rule. If any direct dependencies
     # have the exports attribute, those labels become direct dependencies here.
     deps = unfurl(deps, provider = "closure_js_library")
@@ -116,12 +127,11 @@ def _closure_js_library_impl(
         if hasattr(dep, "closure_css_library"):
             stylesheets.append(dep.label)
 
-    srcs_it = srcs
-    if type(srcs) == "depset":
-        srcs_it = srcs.to_list()
-
     if type(internal_descriptors) == "list":
         internal_descriptors = depset(internal_descriptors.to_list())
+
+    direct_srcs = depset(srcs_it)
+    transitive_srcs = depset(srcs_it, transitive = [js.srcs])
 
     # We now export providers to any parent Target. This is considered a public
     # interface because other Starlark rules can be designed to do things with
@@ -162,7 +172,7 @@ def _closure_js_library_impl(
             ijs_files = depset(),
             # NestedSet<File> of all JavaScript source File artifacts in the
             # transitive closure. These files MUST be JavaScript.
-            srcs = depset(srcs_it, transitive = [js.srcs]),
+            srcs = transitive_srcs,
             # NestedSet<String> of all execroot path prefixes in the transitive
             # closure. For very simple projects, it will be empty. It is useful
             # for getting rid of Bazel generated directories, workspace names,
@@ -190,6 +200,13 @@ def _closure_js_library_impl(
             # of the srcs subprovider. This field exists for optimization.
             has_closure_library = js.has_closure_library,
         ),
+        typescript = struct(
+            es5_sources = direct_srcs,
+            es6_sources = direct_srcs,
+            transitive_es5_sources = transitive_srcs,
+            transitive_es6_sources = transitive_srcs,
+        ),
+        providers = [declarations],
     )
 
 def _closure_js_library(ctx):
@@ -239,6 +256,7 @@ def _closure_js_library(ctx):
                 ],
             ),
         ),
+        providers = library.providers,
     )
 
 closure_js_library = rule(
@@ -258,7 +276,7 @@ closure_js_library = rule(
         ),
         "includes": attr.string_list(),
         "no_closure_library": attr.bool(),
-        "srcs": attr.label_list(allow_files = JS_FILE_TYPE),
+        "srcs": attr.label_list(allow_files = JS_FILE_TYPE + [".mjs", ".d.ts"]),
         "suppress": attr.string_list(),
         "lenient": attr.bool(),
 
@@ -270,4 +288,5 @@ closure_js_library = rule(
         "internal_descriptors": attr.label_list(allow_files = True),
         "internal_expect_failure": attr.bool(default = False),
     }, **CLOSURE_JS_TOOLCHAIN_ATTRS),
+    provides = ["exports", "closure_js_library", DeclarationInfo],
 )
