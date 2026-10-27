@@ -1,0 +1,78 @@
+"""Closure Rules for Bazel, Derivita's fork.
+
+The non-module jars and archives come from the rules_closure_deps extension
+in //closure:extensions.bzl, which reuses repositories.bzl. The test-only jars
+in WORKSPACE (guava-testlib, jimfs, junit, ...) aren't declared here yet, so
+//javatests/... still needs a WORKSPACE build.
+"""
+
+module(
+    name = "io_bazel_rules_closure",
+    version = "0.0.0-derivita",
+)
+
+bazel_dep(name = "bazel_skylib", version = "1.7.1")
+bazel_dep(name = "platforms", version = "0.0.10")
+bazel_dep(name = "protobuf", version = "29.2", repo_name = "com_google_protobuf")
+bazel_dep(name = "rules_cc", version = "0.0.9")
+bazel_dep(name = "rules_java", version = "7.12.4")
+
+# closure_js_library returns rules_nodejs' DeclarationInfo for clutz .d.ts.
+bazel_dep(name = "rules_nodejs", version = "5.8.5")
+bazel_dep(name = "rules_proto", version = "6.0.2")
+
+# The default @npm compiler wrapper in //closure:extensions.bzl.
+bazel_dep(name = "rules_shell", version = "0.4.0")
+
+rules_closure_deps = use_extension("//closure:extensions.bzl", "rules_closure_deps")
+use_repo(
+    rules_closure_deps,
+    "aopalliance",
+    "args4j",
+    "clang",
+    "com_google_auto_common",
+    "com_google_auto_factory",
+    "com_google_auto_value",
+    "com_google_auto_value_annotations",
+    "com_google_closure_stylesheets",
+    "com_google_code_findbugs_jsr305",
+    "com_google_code_gson",
+    "com_google_common_html_types",
+    "com_google_common_html_types_html_proto",
+    "com_google_dagger",
+    "com_google_dagger_compiler",
+    "com_google_dagger_producers",
+    "com_google_dagger_spi",
+    "com_google_errorprone_error_prone_annotations",
+    "com_google_errorprone_javac_shaded",
+    "com_google_guava",
+    "com_google_inject_extensions_guice_assistedinject",
+    "com_google_inject_extensions_guice_multibindings",
+    "com_google_inject_guice",
+    "com_google_java_format",
+    "com_google_javascript_closure_compiler",
+    "com_google_javascript_closure_library",
+    "com_google_jsinterop_annotations",
+    "com_google_protobuf_js",
+    "com_google_template_soy",
+    "com_google_template_soy_jssrc",
+    "com_ibm_icu_icu4j",
+    "com_squareup_javapoet",
+    "fonts_noto_hinted_deb",
+    "fonts_noto_mono_deb",
+    "javax_annotation_jsr250_api",
+    "javax_inject",
+    "libexpat_amd64_deb",
+    "libfontconfig_amd64_deb",
+    "libfreetype_amd64_deb",
+    "libpng_amd64_deb",
+    "npm",
+    "org_json",
+    "org_jsoup",
+    "org_ow2_asm",
+    "org_ow2_asm_analysis",
+    "org_ow2_asm_commons",
+    "org_ow2_asm_tree",
+    "org_ow2_asm_util",
+    "phantomjs",
+)
