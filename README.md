@@ -124,6 +124,37 @@ java_import_external(
 )
 ```
 
+### Bzlmod (Derivita fork)
+
+This fork is a module named `io_bazel_rules_closure`. It isn't in the Bazel
+Central Registry, so pin a commit:
+
+```starlark
+bazel_dep(name = "io_bazel_rules_closure")
+archive_override(
+    module_name = "io_bazel_rules_closure",
+    strip_prefix = "rules_closure-<commit>",
+    urls = ["https://github.com/derivita/rules_closure/archive/<commit>.tar.gz"],
+    integrity = "sha256-...",
+)
+```
+
+`closure_js_binary` runs `@npm//google-closure-compiler/bin:google-closure-compiler`.
+By default `@npm` is a wrapper around the Java Closure Compiler. To use your
+own npm `google-closure-compiler`, or your own copy of any other repository
+in `//closure:extensions.bzl`, override it:
+
+```starlark
+rules_closure = use_extension(
+    "@io_bazel_rules_closure//closure:extensions.bzl",
+    "rules_closure_deps",
+)
+override_repo(rules_closure, "npm", "com_google_javascript_closure_library")
+```
+
+`closure_js_proto_library` (and so `closure_js_template_library`) needs a
+`protoc` with `--js_out`, which protobuf dropped in v21.
+
 ## Examples
 
 Please see the test directories within this project for concrete examples of usage:

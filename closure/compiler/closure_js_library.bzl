@@ -23,7 +23,7 @@ load(
     "collect_runfiles",
     "unfurl",
 )
-load("@build_bazel_rules_nodejs//:providers.bzl", "DeclarationInfo", "declaration_info")
+load("@rules_nodejs//nodejs:providers.bzl", "DeclarationInfo", "declaration_info")
 
 def create_closure_js_library(
         ctx,

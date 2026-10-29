@@ -14,9 +14,20 @@
 
 """External dependencies for Closure Rules."""
 
-load("@bazel_tools//tools/build_defs/repo:java.bzl", "java_import_external")
+load("@bazel_tools//tools/build_defs/repo:java.bzl", _java_import_external = "java_import_external")
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive", "http_file")
 load("//closure/private:platform_http_file.bzl", "platform_http_file")
+
+def java_import_external(name, **kwargs):
+    """java_import_external that names the jar target after the repository.
+
+    Under Bzlmod repository_ctx.name is the canonical name, which ends in
+    `rules_closure_deps~args4j` (`+` on Bazel 8), so without
+    generated_rule_name the target isn't the `@args4j//:args4j` that `@args4j`
+    means.
+    """
+    kwargs.setdefault("generated_rule_name", name)
+    _java_import_external(name = name, **kwargs)
 
 def rules_closure_toolchains():
     """An utility method to load all Closure toolchains.
