@@ -44,10 +44,10 @@ def _impl(ctx):
         ]),
         is_executable = True,
     )
-    return struct(runfiles = ctx.runfiles([
+    return [DefaultInfo(runfiles = ctx.runfiles([
         ctx.file.golden,
         ctx.file.actual,
-    ]))
+    ]))]
 
 _files_equal_test = rule(
     attrs = {
