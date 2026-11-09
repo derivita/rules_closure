@@ -12,8 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//closure/compiler:closure_base_js_library.bzl", "closure_base_js_library")
 load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
+load("@rules_shell//shell:sh_binary.bzl", "sh_binary")
+load("//closure/compiler:closure_base_js_library.bzl", "closure_base_js_library")
 
 package(default_visibility = ["//visibility:public"])
 
