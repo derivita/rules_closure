@@ -14,7 +14,7 @@
 
 licenses(["notice"])  # Apache 2.0
 
-load("@rules_proto//proto:defs.bzl", "proto_library")
+load("@com_google_protobuf//bazel:proto_library.bzl", "proto_library")
 load("@rules_java//java:defs.bzl", "java_library", "java_proto_library")
 
 java_library(
